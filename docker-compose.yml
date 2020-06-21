@@ -1,0 +1,47 @@
+version: "3.7"
+services:
+  flask_app_gunicorn:
+    init: true
+    build:
+      context: ./flask_app
+      dockerfile: Dockerfile-gunicorn
+    environment:
+      - PORT_APP=3000
+      - PORT_API=4000
+      - WORKERS=6
+      - THREADS=1000
+    ports:
+      - "3000"
+    depends_on:
+      - slow_api
+
+  flask_app_gunicorn_gevent:
+    init: true
+    build:
+      context: ./flask_app
+      dockerfile: Dockerfile-gunicorn-gevent
+    environment:
+      - PORT_APP=3001
+      - PORT_API=4000
+      - WORKERS=6
+    ports:
+      - "3001"
+    depends_on:
+      - slow_api
+
+  slow_api:
+    init: true
+    build: ./slow_api
+    environment:
+      - PORT=4000
+    expose:
+      - "4000"
+
+  nginx:
+    image: nginx:latest
+    volumes: 
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - flask_app_gunicorn_gevent
+    ports:
+      - "80:80"
